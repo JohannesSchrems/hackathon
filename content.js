@@ -5,7 +5,7 @@ var EEXCESS = EEXCESS || {};
  * @type Boolean
  */
 EEXCESS.widgetVisible = false;
-
+EEXCESS.queryVisualizationActive = false;
 /**
  * Changes the widget's visibility to the provided value.
  * When the widget is to be shown, the width of the current page is reduced
@@ -29,6 +29,17 @@ EEXCESS.handleWidgetVisibility = function(visible) {
         EEXCESS.widgetVisible = visible;
     }
 };
+
+EEXCESS.queryVisualization = function(active) {
+    if(EEXCESS.queryVisualizationActive !== active){
+        if(active) {
+            $('<script src="chrome-extension://' + EEXCESS.utils.extID + '/visualizations/QueryVisualization/js/querymarkup.js"</script>').appendTo('head');
+        }
+    }
+
+
+}
+
 
 /*
  * Adds the eexcess widget as an iframe, calls the background script with 
@@ -63,6 +74,9 @@ EEXCESS.messaging.listener(
                 case 'getTextualContext':
                     sendResponse({selectedText: document.getSelection().toString(), url: document.URL});
                     break;
+                case 'queryVisualization':
+                    EEXCESS.queryVisualization(request.data);
+                    break;
             }
         }
 );
@@ -82,3 +96,4 @@ EEXCESS.handlePrivacyBoxVisibility = function() {
     }
 };
 $('<div style="border: 0; margin:0; padding: 0; display:none; position:fixed; bottom: 100px; right: 349px; width: 40%; height: 60%;" id="eexcess_privacy"><iframe style="border: 0; width:100%; height: 100%" id="eexcess_privacy_frame" src="chrome-extension://' + EEXCESS.utils.extID + '/privacy/policy.html"></iframe></div>').appendTo('body');
+

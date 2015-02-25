@@ -4,16 +4,16 @@ var EEXCESS = EEXCESS || {};
  * Encapsulates functionality for the model of the eexcess widget
  * @namespace EEXCESS.model
  */
-EEXCESS.model = (function() {
+EEXCESS.model = (function () {
     // init location
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
+        navigator.geolocation.getCurrentPosition(function (position) {
             var loc = [{
-                    longitude: position.coords.longitude,
-                    latitude: position.coords.latitude,
-                    accuracy: position.coords.accuracy,
-                    timestamp: position.timestamp
-                }];
+                longitude: position.coords.longitude,
+                latitude: position.coords.latitude,
+                accuracy: position.coords.accuracy,
+                timestamp: position.timestamp
+            }];
             EEXCESS.storage.local('privacy.profile.currentLocation', JSON.stringify(loc));
         });
     } else {
@@ -23,6 +23,7 @@ EEXCESS.model = (function() {
     // general widget parameters
     var params = {
         visible: false,
+        queryVisualization: false,
         tab: 'results'
     };
 
@@ -45,8 +46,8 @@ EEXCESS.model = (function() {
 
     var openResult = null;
 
-    EEXCESS.browserAction.clickedListener(function(tab) {
-        EEXCESS.browserAction.getBadgeText({}, function(badgeText) {
+    EEXCESS.browserAction.clickedListener(function (tab) {
+        EEXCESS.browserAction.getBadgeText({}, function (badgeText) {
             if (badgeText === '') {
                 EEXCESS.model.toggleVisibility(tab.id, tab.url);
             } else {
@@ -69,13 +70,13 @@ EEXCESS.model = (function() {
     });
 
     // --- listeners for closing a result view --- //
-    EEXCESS.tabs.activatedListener(function(activeInfo) {
+    EEXCESS.tabs.activatedListener(function (activeInfo) {
         if (openResult !== null && activeInfo.tabId !== openResult.id) {
             EEXCESS.logging.closedRecommendation(openResult.url);
             openResult = null;
         }
     });
-    EEXCESS.tabs.updateListener(function(tabId, changeInfo, tab) {
+    EEXCESS.tabs.updateListener(function (tabId, changeInfo, tab) {
         if (openResult !== null && tabId === openResult.id) {
             if (typeof changeInfo['url'] !== 'undefined' && changeInfo.url !== openResult.url) {
                 EEXCESS.logging.closedRecommendation(openResult.url);
@@ -83,13 +84,13 @@ EEXCESS.model = (function() {
             }
         }
     });
-    EEXCESS.tabs.removedListener(function(tabId, removeInfo) {
+    EEXCESS.tabs.removedListener(function (tabId, removeInfo) {
         if (openResult !== null && tabId === openResult.id) {
             EEXCESS.logging.closedRecommendation(openResult.url);
             openResult = null;
         }
     });
-    EEXCESS.windows.focusChangedListener(function(windowID) {
+    EEXCESS.windows.focusChangedListener(function (windowID) {
         if (openResult !== null && windowID === EEXCESS.windows.WINDOW_ID_NONE) {
             EEXCESS.logging.closedRecommendation(openResult.url);
             openResult = null;
@@ -97,8 +98,8 @@ EEXCESS.model = (function() {
     });
     // -------------------------------------------- //
 
-    var _handleResult = function(res) {
-        var execute = function(items) {
+    var _handleResult = function (res) {
+        var execute = function (items) {
             res.data.results = items;
             if (!params.visible || resultPage) {
                 cachedResult = res;
@@ -114,7 +115,7 @@ EEXCESS.model = (function() {
         };
 
         // update ratings first
-        EEXCESS.storage.getRatings(res.data.results, execute, function() {
+        EEXCESS.storage.getRatings(res.data.results, execute, function () {
             execute(res.data.results);
         });
     };
@@ -124,14 +125,14 @@ EEXCESS.model = (function() {
      * Update results to a query with ratings from the database and send each
      * updated result to all tabs
      * @memberOf EEXCESS.model
-     * @param {Array.<Recommendation>} items The results, for which to retrieve 
+     * @param {Array.<Recommendation>} items The results, for which to retrieve
      * ratings
      */
-    var _updateRatings = function(items) {
+    var _updateRatings = function (items) {
         var offset = results.data.results.length - items.length;
         for (var i = 0, len = items.length; i < len; i++) {
             if (typeof items[i].uri !== 'undefined') {
-                EEXCESS.annotation.getRating(items[i].uri, {query: results.query}, function(score) {
+                EEXCESS.annotation.getRating(items[i].uri, {query: results.query}, function (score) {
                     results.data.results[this.pos].rating = score;
                     EEXCESS.messaging.sendMsgAllTabs({
                         method: {parent: params.tab, func: 'rating'},
@@ -142,34 +143,34 @@ EEXCESS.model = (function() {
         }
     };
     var _queryTimestamp;
-    
-    var _getDomain = function(hostname) {
-        var domain = hostname.substring(0,hostname.lastIndexOf('.'));
-        if(domain.indexOf('.') === -1) {
+
+    var _getDomain = function (hostname) {
+        var domain = hostname.substring(0, hostname.lastIndexOf('.'));
+        if (domain.indexOf('.') === -1) {
             return domain;
         } else {
-            return domain.substr(domain.indexOf('.')+1);
+            return domain.substr(domain.indexOf('.') + 1);
         }
     };
-    
-    
-    var _replayQuery = function(tabID, numResults, callback) {
-            var replayData = {
-                reason: 'replay',
-                terms: currentQuery['terms'],
-                numResults: numResults
-            };
-            console.log(replayData);
-            var success = function(results) {
-                _handleResult({query:currentQuery['query'],data: results});
-                callback({query:currentQuery['query'],results:results});
-            };
-            var error = function(error) { // error callback
-                EEXCESS.messaging.sendMsgTab(tabID, {method: {parent: 'results', func: 'error'}, data: error});
-            };
-            EEXCESS.backend.getCall()(replayData, 1, numResults, success, error);
+
+
+    var _replayQuery = function (tabID, numResults, callback) {
+        var replayData = {
+            reason: 'replay',
+            terms: currentQuery['terms'],
+            numResults: numResults
         };
-    
+        console.log(replayData);
+        var success = function (results) {
+            _handleResult({query: currentQuery['query'], data: results});
+            callback({query: currentQuery['query'], results: results});
+        };
+        var error = function (error) { // error callback
+            EEXCESS.messaging.sendMsgTab(tabID, {method: {parent: 'results', func: 'error'}, data: error});
+        };
+        EEXCESS.backend.getCall()(replayData, 1, numResults, success, error);
+    };
+
     return {
         /**
          * Toggles the visibility of the widget
@@ -178,8 +179,8 @@ EEXCESS.model = (function() {
          * @param {String} url the url of the current page
          * @returns {Boolean} true if visible, otherwise false
          */
-        toggleVisibility: function(tabID, url) {
-            var _finally = function(url) {
+        toggleVisibility: function (tabID, url) {
+            var _finally = function (url) {
                 params.visible = !params.visible;
                 var xhr = $.ajax({
                     url: EEXCESS.config.LOG_SHOW_HIDE_URI,
@@ -191,13 +192,20 @@ EEXCESS.model = (function() {
                 EEXCESS.messaging.sendMsgAllTabs({method: 'visibility', data: params.visible});
             };
             if (url === -1) {
-                EEXCESS.tabs.get(tabID, function(tab) {
+                EEXCESS.tabs.get(tabID, function (tab) {
                     _finally(tab.url);
                 });
             } else {
                 _finally(url);
             }
         },
+
+        toggleQueryVisualization: function (tabID, url) {
+            params.queryVisualization = !params.queryVisualization;
+            EEXCESS.messaging.sendMsgAllTabs({method: 'queryVisualization', data: params.queryVisualization});
+        },
+
+
         /**
          * Executes the following functions:
          * - log the query
@@ -208,11 +216,11 @@ EEXCESS.model = (function() {
          * Furthermore they are set as the current results in the widget's model.
          * At logging the recommendations, query is added as context.
          * @memberOf EEXCESS.model
-         * @param {Integer} tabID Identifier of the browsertab, the request 
+         * @param {Integer} tabID Identifier of the browsertab, the request
          * originated
-         * @param {Object} data The query data 
+         * @param {Object} data The query data
          */
-        query: function(tabID, data) {
+        query: function (tabID, data) {
             EEXCESS.browserAction.setBadgeText({text: ""});
             console.log(data);
             var tmp = {};
@@ -248,7 +256,10 @@ EEXCESS.model = (function() {
                 }
             }
             if (tmp['query'] === '') {
-                EEXCESS.messaging.sendMsgTab(tabID, {method: {parent: 'results', func: 'error'}, data: 'query is empty...'});
+                EEXCESS.messaging.sendMsgTab(tabID, {
+                    method: {parent: 'results', func: 'error'},
+                    data: 'query is empty...'
+                });
                 return;
             }
 
@@ -270,7 +281,7 @@ EEXCESS.model = (function() {
             currentQuery['query'] = tmp['query'];
 
 
-            var success = function(data) { // success callback
+            var success = function (data) { // success callback
                 // TODO: search may return no results (although successful)
                 tmp['data'] = data;
 //                if (data.totalResults !== 0) {
@@ -282,7 +293,7 @@ EEXCESS.model = (function() {
 //                }
 
             };
-            var error = function(error) { // error callback
+            var error = function (error) { // error callback
                 var tmp_data = {
                     msg: error,
                     query: currentQuery['query']
@@ -293,7 +304,7 @@ EEXCESS.model = (function() {
             // log manual query and obtain selection
             if (tmp.hasOwnProperty('reason') && tmp['reason']['reason'] === 'manual') {
                 EEXCESS.logging.logQuery(tabID, tmp['weightedTerms'], _queryTimestamp, '', 'manual');
-                EEXCESS.messaging.sendMsgTab(tabID, {method: 'getTextualContext'}, function(ctxData) {
+                EEXCESS.messaging.sendMsgTab(tabID, {method: 'getTextualContext'}, function (ctxData) {
                     tmp['reason']['value'] = ctxData['selectedText'];
                     // call provider (resultlist should start with first item)
                     EEXCESS.backend.getCall()(data, 1, numResults, success, error);
@@ -306,39 +317,39 @@ EEXCESS.model = (function() {
         /**
          * Sends the current model state to the specified callback
          * @memberOf EEXCESS.model
-         * @param {Integer} tabID Identifier of the browsertab, the request 
+         * @param {Integer} tabID Identifier of the browsertab, the request
          * originated
          * @param {Object} data not used
          * @param {Function} callback
          */
-        widget: function(tabID, data, callback) {
+        widget: function (tabID, data, callback) {
             callback({params: params, results: results});
         },
         /**
-         * Sends the current visibility state of the widget to the specified 
+         * Sends the current visibility state of the widget to the specified
          * callback
          * @memberOf EEXCESS.model
-         * @param {Integer} tabID Identifier of the browsertab, the request 
+         * @param {Integer} tabID Identifier of the browsertab, the request
          * originated
          * @param {Object} data not used
          * @param {Function} callback
          */
-        visibility: function(tabID, data, callback) {
+        visibility: function (tabID, data, callback) {
             callback(params.visible);
         },
         /**
-         * Sets the rating score of a resource in the resultlist to the 
+         * Sets the rating score of a resource in the resultlist to the
          * specified value, stores the rating and informs all other tabs.
          * The query  is added to the rating as context.
          * @memberOf EEXCESS.model
-         * @param {Integer} tabID Identifier of the browsertab, the request 
+         * @param {Integer} tabID Identifier of the browsertab, the request
          * originated
          * @param {Object} data rating of the resource
          * @param {String} data.uri URI of the rated resource
          * @param {Integer} data.score Score of the rating
          * @param {Integer} data.pos Position of the resource in the resultlist
          */
-        rating: function(tabID, data) {
+        rating: function (tabID, data) {
             var context = {query: results.query};
             EEXCESS.annotation.rating(data.uri, data.score, context, true);
             results.data.results[data.pos].rating = data.score;
@@ -349,11 +360,11 @@ EEXCESS.model = (function() {
         },
         /**
          * Returns the model's current context. The context contains the current
-         * query (if any) 
+         * query (if any)
          * @memberOf EEXCESS.model
          * @returns {Object} the context
          */
-        getContext: function() {
+        getContext: function () {
             var context = {};
             if (results.query !== 'Search') {
                 context.query = results.query;
@@ -362,14 +373,14 @@ EEXCESS.model = (function() {
         },
         /**
          * Hands in the current query and corresponding results to the specified callback
-         * @param {Integer} tabID Identifier of the browsertab, the request 
+         * @param {Integer} tabID Identifier of the browsertab, the request
          * originated
          * @param {Object} data unused
          * @param {Function} callback
          */
-        getResults: function(tabID, data, callback) {
-            if(typeof data !== 'undefined' && data !== null) {
-                if(data.numResults > results.data.totalResults) {
+        getResults: function (tabID, data, callback) {
+            if (typeof data !== 'undefined' && data !== null) {
+                if (data.numResults > results.data.totalResults) {
                     _replayQuery(tabID, data.numResults, callback);
                     return;
                 }
@@ -377,8 +388,8 @@ EEXCESS.model = (function() {
             callback({query: results.query, results: results.data});
         },
         replayQuery: _replayQuery,
-        resultOpened: function(tabID, data, callback) {
-            EEXCESS.windows.getCurrent({populate: true}, function(win) {
+        resultOpened: function (tabID, data, callback) {
+            EEXCESS.windows.getCurrent({populate: true}, function (win) {
                 for (var i = 0; i < win.tabs.length; ++i) {
                     if (win.tabs[i].url === data) {
                         openResult = {id: win.tabs[i].id, url: data};

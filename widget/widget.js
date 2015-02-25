@@ -63,6 +63,16 @@ EEXCESS.init = function(widget) {
         evt.preventDefault();
         EEXCESS.messaging.callBG({method: 'privacySandbox', data: 'chrome-extension://' + EEXCESS.utils.extID + '/' + $(evt.target).parent('a').attr('href')});
     });
+
+    $('#create_search').click(function(evt) {
+        evt.preventDefault();
+        EEXCESS.messaging.callBG({method: {parent: 'model', func: 'toggleQueryVisualization'}, data: -1});
+    });
+
+
+
+
+
     var form = $('#eexcess_searchForm');
     form.submit(function() {
         var query_string = $('#eexcess_query').val();
@@ -94,7 +104,7 @@ EEXCESS.messaging.callBG({method: {parent: 'model', func: 'widget'}}, EEXCESS.in
 
 
 EEXCESS.messaging.listener(function(request, sender, sendResponse) {
-    if (request.method !== 'privacySandbox' && request.method !== 'visibility' && request.method !== 'fancybox' && request.method !== 'getTextualContext' && request.method.parent !== 'results') {
+    if (request.method !== 'privacySandbox' && request.method !== 'visibility' && request.method !== 'queryVisualization' && request.method !== 'fancybox' && request.method !== 'getTextualContext' && request.method.parent !== 'results') {
         if (typeof request.method.parent !== 'undefined') {
             EEXCESS[request.method.parent][request.method.func](request.data);
         } else if (request.method === 'loading') {
