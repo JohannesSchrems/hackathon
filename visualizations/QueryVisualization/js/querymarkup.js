@@ -2,19 +2,25 @@ var content = $("body").not("#eexcess_sidebar");
 content.css({cursor: 'pointer'});
 
 
-$("body").not("#eexcess_sidebar").click(function (e) {
-
-
-    var range = window.getSelection() || document.getSelection() || document.selection.createRange();
-    var word = $.trim(range.toString());
-
+$("body").not("#eexcess_sidebar").dblclick(function (e) {
+    var selection = window.getSelection() || document.getSelection() || document.selection.createRange();
+    var word = $.trim(selection.toString());
     if (word != '') {
-        alert(word);
+        var range = selection.getRangeAt(0);
+        var span = document.createElement("span");
+        span.className = "selected";
+        range.surroundContents(span);
     }
-    range.collapse(range.anchorNode, range.anchorOffset);
+    selection.collapse(selection.anchorNode, selection.anchorOffset);
     e.stopPropagation();
-
 });
+
+$("body").on("click", ".selected", function () {
+    $(this).css("background-color", $('body').css('background-color'));
+});
+
+//SearchResultList.loading() // call loading-method on search result list first (to show loading bar). Adapt variable name of the list!
+//EEXCESS.messaging.callBG({method: {parent: 'model', func: 'query'}, data: {reason: {reason: 'manual'}, terms: query}); // issue query
 
 
 

@@ -14,7 +14,7 @@ EEXCESS.queryVisualizationActive = false;
  * @memberOf EEXCESS
  * @param {Boolean} visible
  */
-EEXCESS.handleWidgetVisibility = function(visible) {
+EEXCESS.handleWidgetVisibility = function (visible) {
     if (EEXCESS.widgetVisible !== visible) {
         if (visible) { // show widget
             var width = $(window).width() - 333;
@@ -30,14 +30,14 @@ EEXCESS.handleWidgetVisibility = function(visible) {
     }
 };
 
-EEXCESS.queryVisualization = function(active) {
-    if(EEXCESS.queryVisualizationActive !== active){
-        if(active) {
-            $('<script src="chrome-extension://' + EEXCESS.utils.extID + '/visualizations/QueryVisualization/js/querymarkup.js"</script>').appendTo('head');
+EEXCESS.queryVisualization = function (active) {
+    if (EEXCESS.queryVisualizationActive !== active) {
+        if (active) {
+            $('<script src="chrome-extension://' + EEXCESS.utils.extID + '/libs/jquery-1.10.1.min.js"></script>').appendTo('head');
+            $('<script src="chrome-extension://' + EEXCESS.utils.extID + '/visualizations/QueryVisualization/js/querymarkup.js"></script>').appendTo('head');
+            $('<link rel="stylesheet" type="text/css" href="chrome-extension://' + EEXCESS.utils.extID + '/visualizations/QueryVisualization/css/queryVisualization.css">').appendTo('head');
         }
     }
-
-
 }
 
 
@@ -52,39 +52,39 @@ EEXCESS.messaging.callBG({method: {parent: 'model', func: 'visibility'}}, EEXCES
 
 // Listen to messages from the background script
 EEXCESS.messaging.listener(
-        function(request, sender, sendResponse) {
-            switch (request.method) {
-                case 'visibility':
-                    // change widget's visibility
-                    EEXCESS.handleWidgetVisibility(request.data);
-                    break;
-                case 'privacySandbox':
-                    // change widget's visibility
-                    EEXCESS.handlePrivacyBoxVisibility(request.data);
-                    break;
-                case 'fancybox':
-                    // open fancybox preview of the url provided in request.data
-                    $('<a href="' + request.data + '"></a>').fancybox({
-                        'autoSize': false,
-                        'type': 'iframe',
-                        'width': '90%',
-                        'height': '90%'
-                    }).trigger('click');
-                    break;
-                case 'getTextualContext':
-                    sendResponse({selectedText: document.getSelection().toString(), url: document.URL});
-                    break;
-                case 'queryVisualization':
-                    EEXCESS.queryVisualization(request.data);
-                    break;
-            }
+    function (request, sender, sendResponse) {
+        switch (request.method) {
+            case 'visibility':
+                // change widget's visibility
+                EEXCESS.handleWidgetVisibility(request.data);
+                break;
+            case 'privacySandbox':
+                // change widget's visibility
+                EEXCESS.handlePrivacyBoxVisibility(request.data);
+                break;
+            case 'fancybox':
+                // open fancybox preview of the url provided in request.data
+                $('<a href="' + request.data + '"></a>').fancybox({
+                    'autoSize': false,
+                    'type': 'iframe',
+                    'width': '90%',
+                    'height': '90%'
+                }).trigger('click');
+                break;
+            case 'getTextualContext':
+                sendResponse({selectedText: document.getSelection().toString(), url: document.URL});
+                break;
+            case 'queryVisualization':
+                EEXCESS.queryVisualization(request.data);
+                break;
         }
+    }
 );
 
 /*
  * privacy initialization stuff
  */
-EEXCESS.handlePrivacyBoxVisibility = function() {
+EEXCESS.handlePrivacyBoxVisibility = function () {
     var visible = !$('#eexcess_privacy').is(':visible');
     if (EEXCESS.privacyVisible !== visible) {
         if (visible) {
